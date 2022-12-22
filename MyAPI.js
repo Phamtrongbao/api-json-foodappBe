@@ -8,7 +8,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 const { db } = require("./config/admin");
 
 app.use(cors());
-var port = 3000;
+// var port = 3000;
+const port = process.env.PORT || 3000;
 app.listen(port, function () {
   console.log("Server is running..." + port);
 });
@@ -488,16 +489,15 @@ app.get("/api/get/Feedback-Brand/:id/FeedbackBrand", async (req, res) => {
 });
 
 app.post("/api/add-FeedbackBrand/FeedBackBrand/:id", async (req, res) => {
-  const { Name, Comment, IMG, Rating, CreateBy, CreateDate } = req.body;
+  const { Comment, IMG, Rating, Email, CreateDate } = req.body;
   const ID = req.params.id;
   try {
     const course = db.collection("Brand").doc(ID).collection("FeedBackQuan");
     const item = {
-      Name: Name,
       Comment: Comment,
       IMG: IMG,
       Rating: Rating,
-      CreateBy: CreateBy,
+      Email: Email,
       CreateDate: CreateDate,
     };
     await course.add(item);
@@ -534,7 +534,7 @@ app.get("/api/get/Account", async (req, res) => {
 });
 
 app.post("/api/dktaikhoan", async (req, res) => {
-  const { Name, Address, Password, PhoneNumber, Email, Gender } = req.body;
+  const { Name, Address, Password, PhoneNumber, Email, Gender, IMG } = req.body;
   const course = db.collection("Account").doc();
   const item = {
     Name: Name,
@@ -544,6 +544,7 @@ app.post("/api/dktaikhoan", async (req, res) => {
     Type: "User",
     Email: Email,
     Gender: Gender,
+    IMG: IMG,
   };
   try {
     console.log("add", item);
@@ -642,20 +643,18 @@ app.post("/api/get/Account", async (req, res) => {
 
 app.put("/api/Put/:id", async (req, res) => {
   const id = req.params.id;
-  const { Name, Address, Password, PhoneNumber, Email, Gender, Type } =
-    req.body;
+  const { Name, Address, Password, PhoneNumber, Email, IMG } = req.body;
   try {
     const item = {
       Name: Name,
       Address: Address,
       Password: Password,
       PhoneNumber: PhoneNumber,
-      Type: Type,
+      IMG: IMG,
       Email: Email,
-      Gender: Gender,
     };
     await db.collection("Account").doc(id).update(item);
-    console.log("Update", id);
+    console.log("Update", item);
     res.status(200).send({
       status: "Update success",
       message: "Update successfully",
@@ -785,5 +784,52 @@ app.delete("/api/Delete/Brand/:id/Menu/:code", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json(error.message);
+  }
+});
+
+//feedback món
+app.post("/api/post/Brand/:id/FeedbackDish", async (req, res) => {
+  const { Comment, Name, IMG, Rating, Email, CreateDate } = req.body;
+  const id = req.params.id;
+
+  const item = {
+    Comment: Comment,
+    Name: Name,
+    IMG: IMG,
+    Rating: Rating,
+    Email: Email,
+    CreateDate: CreateDate,
+  };
+  try {
+    db.collection("Brand").doc(id).collection("FeedBackDish").add(item);
+
+    // await course.set(item);
+    console.log("add", item);
+    res.status(200).send({
+      status: "success",
+      message: "entry added successfully",
+      data: item,
+    });
+  } catch (error) {
+    res.status(500).json(error.message);
+  }
+});
+
+app.get("/api/get/Brand/:id/FeedbackDish", async (req, res) => {
+  // call firebase
+  const ID = req.params.id;
+  const courseRef = db.collection("Brand").doc(ID).collection("FeedBackDish");
+  try {
+    courseRef.get().then((snapshot) => {
+      const items = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      console.log(items);
+      return res.status(201).json(items);
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error });
   }
 });
